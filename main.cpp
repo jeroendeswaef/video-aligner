@@ -3,7 +3,7 @@
 #include <thread>         // std::thread
 #include <mutex>          // std::mutex
 #include <algorithm>      // std::min
-#include <opencv2/opencv.hpp>
+//#include <opencv2/opencv.hpp>
 #include <gtkmm/builder.h>
 #include <gtkmm/main.h>
 
@@ -16,13 +16,15 @@
 #include "Queue.h"
 #include "DrawParams.h"
 
+#include "save_to_png.h"
+
 Gtk::Image *drawingImage;
 volatile bool threadRun;
 std::mutex myMutex;
 std::thread myThread;
 
 Glib::Dispatcher dispatcher;
-cv::Mat frame, outImage;
+//cv::Mat frame, outImage;
 
 Gtk::Scale* scaleLeft = 0;
 
@@ -38,7 +40,7 @@ struct Surface
 
 void run() {
 
-    cv::Mat originalFrame;
+    /*cv::Mat originalFrame;
     cv::VideoCapture cap ( "test.mp4" ); // open the default camera
     threadRun = true;
     if( ! cap.isOpened () )  // check if we succeeded
@@ -82,7 +84,7 @@ void run() {
         myMutex.unlock();
         
         dispatcher.emit();
-    }
+    }*/
 }
 
 void updateLeft(DrawParams& newDrawParams) 
@@ -128,7 +130,13 @@ int main(int argc, char** argv) {
     scaleLeft->set_range(1, 100);
     scaleLeft->set_value(40);
     currentDrawParams.setPos(40);
-    scaleLeft->signal_value_changed().connect(sigc::ptr_fun(&updateSliderLeft));
+
+    uint8_t *p_image_data = NULL;
+    int width, height, linesize;
+    video_aligner_get_frame(&p_image_data, &width, &height, &linesize);
+    //printf("wxh: %dx%d", width, height);
+    drawingImage->set(Gdk::Pixbuf::create_from_data(p_image_data, Gdk::COLORSPACE_RGB, false, 8, width, height, linesize));
+    /*scaleLeft->signal_value_changed().connect(sigc::ptr_fun(&updateSliderLeft));
 
     // putting the signal on drawingImage doesn't fire the signal
     window1->signal_configure_event().connect(sigc::ptr_fun(&updateSize), false);
@@ -141,8 +149,11 @@ int main(int argc, char** argv) {
         myMutex.unlock();
     });
 
-    myThread = std::thread(&run);
+    myThread = std::thread(&run);*/
+
+
     Gtk::Main::run(*window1);
 
+    free(p_image_data);
     return 0;
 }
